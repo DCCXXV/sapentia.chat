@@ -19,5 +19,11 @@
 		"svelte-check": "^4.0.0",
 		"typescript": "^5.0.0",
 		"vite": "^6.2.5"
+	},
+	"dependencies": {
+		"@carbon/themes": "^11.50.0",
+		"carbon-components-svelte": "^0.88.4",
+		"carbon-icons-svelte": "^13.3.0",
+		"nanoid": "^5.1.5"
 	}
 }
