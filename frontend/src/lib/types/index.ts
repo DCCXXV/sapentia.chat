@@ -1,6 +1,6 @@
 export interface ChatMessage {
     role: 'user' | 'ai';
     content: string;
-    timestamp?: Date;
+    timestamp?: number;
     id?: string;
 }

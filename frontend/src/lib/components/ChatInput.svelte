@@ -5,12 +5,19 @@
     let inputValue: string = '';
 
     export let onSend: (text: string) => void;
-    
-    function handleSubmit() {
-    const trimmedValue = inputValue.trim();
-    if (trimmedValue) {
-            onSend(trimmedValue);
-            inputValue = '';
+
+    function handleSubmit(): void {
+        console.log('Mensaje con saltos de línea:', inputValue);
+        onSend(inputValue);
+        inputValue = '';
+    }
+
+    function handleKeyDown(event: KeyboardEvent): void {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            handleSubmit();
+        } else if (event.key === 'Enter' && event.shiftKey) {
+            inputValue += '\n';
         }
     }
   </script>
@@ -21,6 +28,7 @@
         placeholder="Type your message..."
         bind:value={inputValue}
         style="flex-grow: 1; margin-right: 1rem;"
+        on:keydown={handleKeyDown}
     />
     <Button 
         type="submit"

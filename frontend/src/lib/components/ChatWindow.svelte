@@ -21,10 +21,14 @@
     }
 
     async function handleSend(userMessageContent: string) {
+        const currentTimestampSeconds = Math.floor(Date.now() / 1000);
+
+        const userContentForDisplay = userMessageContent.replace(/\n/g, '<br>');
+
         addMessage({
             role: "user",
-            content: userMessageContent,
-            timestamp: new Date(),
+            content: userContentForDisplay,
+            timestamp: currentTimestampSeconds,
         });
         await tick();
         scrollToBottom();
@@ -36,10 +40,12 @@
             $messages
         );
 
+        const aiTimestampSeconds = Math.floor(Date.now() / 1000);
+
         addMessage({
             role: "ai",
             content: aiReplyContent,
-            timestamp: new Date(),
+            timestamp: aiTimestampSeconds,
         });
         setLoading(false);
 
@@ -72,6 +78,7 @@
         border: 1px solid var(--cds-border-subtle, #e0e0e0);
         padding: 1rem;
         border-radius: var(--cds-border-radius, 0);
+        overflow: hidden;
     }
     .messages-container {
         flex-grow: 1;

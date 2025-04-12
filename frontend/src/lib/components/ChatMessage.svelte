@@ -9,9 +9,10 @@
 
 <div class="chat-message {isUser ? 'user-message' : 'ai-message'}">
     <Tile light={!isUser}>
-        <p>{message.content}</p>
+        {@html message.content}
+
         {#if message.timestamp}
-            <small>{message.timestamp.toLocaleTimeString()}</small>
+            <small>{new Date(message.timestamp * 1000).toLocaleTimeString()}</small>
         {/if}
     </Tile>
 </div>
@@ -20,7 +21,13 @@
     .chat-message {
         margin-bottom: 1rem;
         max-width: 80%;
+        hyphens: auto;
+        hyphenate-limit-chars: 7;
+        text-align: justify;
         text-wrap: pretty;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        line-height: 150%;
     }
 
     .user-message {
@@ -33,13 +40,13 @@
 
     :global(.user-message .bx--tile),
     :global(.ai-message .bx--tile) {
-        padding: 0.5rem, 1rem;
+        padding: 0.5rem 1rem;
     }
 
     small {
         display: block;
         font-size: 0.75rem;
-        color: var(--cds-text-helper, #6f6f6f);
+        filter: brightness(70%);
         margin-top: 0.25rem;
         text-align: right;
     }
