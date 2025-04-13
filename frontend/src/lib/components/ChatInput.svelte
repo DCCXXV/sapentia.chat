@@ -1,10 +1,10 @@
 <script lang="ts">
     import { TextArea, Button } from 'carbon-components-svelte';
     import Send from 'carbon-icons-svelte/lib/Send.svelte';
-  
-    let inputValue: string = '';
+    
+    let inputValue: string = $state('');
 
-    export let onSend: (text: string) => void;
+    let { onSend } = $props();
 
     function handleSubmit(): void {
         console.log('Mensaje con saltos de línea:', inputValue);
@@ -19,17 +19,18 @@
                 handleSubmit();
             }
         } else if (event.key === 'Enter' && event.shiftKey) {
+            event.preventDefault();
             inputValue += '\n';
         }
     }
   </script>
   
-<form on:submit|preventDefault={handleSubmit} class="chat-input-form">
+<form onsubmit={handleSubmit} class="chat-input-form">
     <TextArea
         placeholder="Type your message..."
         bind:value={inputValue}
         style="flex-grow: 1; margin-right: 1rem; resize: none;"
-        on:keydown={handleKeyDown}
+        onkeydown={handleKeyDown}
     />
     <Button 
         type="submit"

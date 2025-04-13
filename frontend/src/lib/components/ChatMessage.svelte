@@ -34,10 +34,10 @@
         }
     });
 
-    export let message: ChatMessage;
-    let isHovering: boolean = false;
+    let { message } = $props<{ message: ChatMessage }>();
+    let isHovering: boolean = $state(false);
 
-    $: isUser = message.role === 'user';
+    let isUser: boolean = $derived(message.role === 'user');
 
     const domPurifyOptions = {
         ALLOWED_TAGS: [
@@ -59,7 +59,7 @@
         return sanitizedHtml;
     }
 
-    $: sanitizedContentPromise = getSanitizedContent(message.content);
+    let sanitizedContentPromise = $derived(getSanitizedContent(message.content));
 
     async function handleCopy() {
         if (!navigator.clipboard) {
@@ -73,8 +73,8 @@
 <article
     class="chat-message {isUser ? 'user-message' : 'ai-message'}"
     aria-label={isUser ? 'User message' : 'AI message'}
-    on:mouseenter={() => { isHovering = true; }}
-    on:mouseleave={() => { isHovering = false; }}
+    onmouseenter={() => { isHovering = true; }}
+    onmouseleave={() => { isHovering = false; }}
 >
     <Tile light={!isUser}>
         {#await sanitizedContentPromise}
@@ -90,7 +90,7 @@
         {/if}
     </Tile>
     <div class="copy-button-wrapper" class:visible={isHovering}>
-        <CopyButton text="{message.content}" class="copy-button" on:click={handleCopy} />
+        <CopyButton text={message.content} class="copy-button" onclick={handleCopy} />
     </div>
 </article>
 

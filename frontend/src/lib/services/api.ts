@@ -8,22 +8,26 @@ interface ApiResponse {
 
 interface ApiRequestPayload {
     message: string;
+    selectedModelId: string;
     history?: ChatMessage[];
 }
 
 /**
  * Sends a message to the backend API and returns the AI's reply
- * 
+ *
  * @param messageContent The user's message text.
+ * @param selectedModelId The ID of the selected model.
  * @param history The chat history array.
- * @returns A promise that resolves with the Ai's reply.
+ * @returns A promise that resolves with the AI's reply.
  */
 export async function sendMessageToAI(
     messageContent: string,
+    selectedModelId: string,
     history: ChatMessage[] = []
 ): Promise<string> {
     const payload: ApiRequestPayload = {
         message: messageContent,
+        selectedModelId: selectedModelId,
         // history: history
     };
 

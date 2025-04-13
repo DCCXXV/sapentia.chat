@@ -25,7 +25,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	geminiClient, err := gemini.NewClient(ctx, cfg.GeminiAPIKey, "gemini-2.0-flash")
+	geminiClient, err := gemini.NewClient(ctx, cfg.GeminiAPIKey)
 	if err != nil {
 		log.Fatalf("Failed to initialize Gemini client: %v", err)
 	}

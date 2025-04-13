@@ -5,7 +5,6 @@
         addMessage,
         setLoading,
     } from "$lib/stores/chatStore";
-    import type { ChatMessage as MessageType } from "$lib/types";
     import ChatMessage from "./ChatMessage.svelte";
     import ChatInput from "./ChatInput.svelte";
     import { sendMessageToAI } from "$lib/services/api";
@@ -14,29 +13,39 @@
 
     let chatContainer: HTMLDivElement;
 
+    type $$Props = {
+        selectedModel: string;
+    };
+
+    let { selectedModel } = $props();
+
+    $effect(() => {
+        console.log("ChatWindow received model:", selectedModel);
+    });
+
     function scrollToBottom(): void {
         if (chatContainer) {
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
     }
 
-    async function handleSend(userMessageContent: string) {
+    async function handleSend(message: string) {
         const currentTimestampSeconds = Math.floor(Date.now() / 1000);
 
-        const userContentForDisplay = userMessageContent.replace(/\n/g, '<br>');
+        const userContentForDisplay = message.replace(/\n/g, '<br>');
 
         addMessage({
             role: "user",
             content: userContentForDisplay,
             timestamp: currentTimestampSeconds,
         });
+        setLoading(true);
         await tick();
         scrollToBottom();
 
-        setLoading(true);
-
         const aiReplyContent = await sendMessageToAI(
-            userMessageContent,
+            message,
+            selectedModel,
             $messages
         );
 
@@ -48,9 +57,9 @@
             timestamp: aiTimestampSeconds,
         });
         setLoading(false);
-
         await tick();
         scrollToBottom();
+
     }
 </script>
 
