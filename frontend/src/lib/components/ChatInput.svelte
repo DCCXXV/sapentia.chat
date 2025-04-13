@@ -15,7 +15,9 @@
     function handleKeyDown(event: KeyboardEvent): void {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
-            handleSubmit();
+            if (inputValue.trim()) {
+                handleSubmit();
+            }
         } else if (event.key === 'Enter' && event.shiftKey) {
             inputValue += '\n';
         }
@@ -24,17 +26,17 @@
   
 <form on:submit|preventDefault={handleSubmit} class="chat-input-form">
     <TextArea
-        labelText=""
         placeholder="Type your message..."
         bind:value={inputValue}
-        style="flex-grow: 1; margin-right: 1rem;"
+        style="flex-grow: 1; margin-right: 1rem; resize: none;"
         on:keydown={handleKeyDown}
     />
     <Button 
         type="submit"
         icon={Send}
         iconDescription="Send"
-        style="margin-top:0.1rem;">
+        style="margin-top:0.1rem;"
+        disabled={!inputValue.trim()}>
     </Button>
 </form>
   

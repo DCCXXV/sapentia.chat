@@ -7,7 +7,6 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/DCCXXV/sapentia.chat/backend/internal/gemini"
-	"github.com/DCCXXV/sapentia.chat/backend/internal/utils"
 )
 
 type ChatRequest struct {
@@ -40,10 +39,8 @@ func (h *ChatHandler) HandleChatMessage(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Message cannot be empty")
 	}
 
-	sanitizedUserMessage := utils.SanitizeInput(req.Message)
-
 	ctx := c.Request().Context()
-	aiReply, err := h.geminiClient.GenerateContent(ctx, sanitizedUserMessage)
+	aiReply, err := h.geminiClient.GenerateContent(ctx, req.Message)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get response from AI")
 	}

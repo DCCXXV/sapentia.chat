@@ -74,10 +74,9 @@
     .chat-window {
         display: flex;
         flex-direction: column;
-        height: 100vh;
-        border: 1px solid var(--cds-border-subtle, #e0e0e0);
+        height: 100%;
         padding: 1rem;
-        border-radius: var(--cds-border-radius, 0);
+        box-sizing: border-box;
         overflow: hidden;
     }
     .messages-container {
@@ -86,6 +85,7 @@
         margin-bottom: 1rem;
         display: flex;
         flex-direction: column;
+        min-height: 0;
     }
     .loading-indicator {
         display: flex;

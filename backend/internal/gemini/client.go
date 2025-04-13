@@ -19,7 +19,7 @@ func NewClient(ctx context.Context, apiKey string, modelName string) (*Client, e
 		return nil, fmt.Errorf("API key cannot be empty")
 	}
 	if modelName == "" {
-		modelName = "gemini-2.0-flash-latest"
+		modelName = "gemini-2.0-flash-lite"
 	}
 
 	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))

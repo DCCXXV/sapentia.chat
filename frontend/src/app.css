@@ -1,1 +1,22 @@
-@import 'carbon-components-svelte/css/g100.css';
+@import 'carbon-components-svelte/css/all.css';
+
+/* chromium/safari scrollbar theming, firefox's unchanged since it looks good */
+body::-webkit-scrollbar,
+div::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+body::-webkit-scrollbar-track,
+div::-webkit-scrollbar-track {
+  background: var(--cds-ui-background, #f4f4f4);
+}
+body::-webkit-scrollbar-thumb,
+div::-webkit-scrollbar-thumb {
+  background-color: var(--cds-interactive-03, #cccccc);
+  border-radius: 4px;
+  border: 2px solid var(--cds-ui-background, #f4f4f4);
+}
+body::-webkit-scrollbar-thumb:hover,
+div::-webkit-scrollbar-thumb:hover {
+  background-color: var(--cds-interactive-02, #a8a8a8);
+}
