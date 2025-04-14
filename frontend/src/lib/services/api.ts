@@ -9,6 +9,7 @@ interface ApiResponse {
 interface ApiRequestPayload {
     message: string;
     selectedModelId: string;
+    assistedLearning: boolean;
     history?: ChatMessage[];
 }
 
@@ -23,11 +24,13 @@ interface ApiRequestPayload {
 export async function sendMessageToAI(
     messageContent: string,
     selectedModelId: string,
+    assistedLearning: boolean,
     history: ChatMessage[] = []
 ): Promise<string> {
     const payload: ApiRequestPayload = {
         message: messageContent,
         selectedModelId: selectedModelId,
+        assistedLearning: assistedLearning,
         // history: history
     };
 

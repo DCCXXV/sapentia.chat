@@ -15,9 +15,10 @@
 
     type $$Props = {
         selectedModel: string;
+        assistedLearning: boolean;
     };
 
-    let { selectedModel } = $props();
+    let { selectedModel, assistedLearning } = $props();
 
     $effect(() => {
         console.log("ChatWindow received model:", selectedModel);
@@ -46,6 +47,7 @@
         const aiReplyContent = await sendMessageToAI(
             message,
             selectedModel,
+            assistedLearning,
             $messages
         );
 
@@ -85,6 +87,7 @@
         flex-direction: column;
         height: 100%;
         padding: 1rem;
+        padding-top: 0rem;
         box-sizing: border-box;
         overflow: hidden;
     }

@@ -8,11 +8,13 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/DCCXXV/sapentia.chat/backend/internal/gemini"
+	"github.com/DCCXXV/sapentia.chat/backend/internal/utils"
 )
 
 type ChatRequest struct {
-	Message         string `json:"message"`
-	SelectedModelID string `json:"selectedModelId"`
+	Message          string `json:"message"`
+	SelectedModelID  string `json:"selectedModelId"`
+	AssistedLearning bool   `json:"assistedLearning"`
 }
 
 type ChatResponse struct {
@@ -49,6 +51,7 @@ func (h *ChatHandler) HandleChatMessage(c echo.Context) error {
 
 	log.Println(req.Message)
 	log.Println(req.SelectedModelID)
+	log.Println(req.AssistedLearning)
 
 	if req.Message == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "Message cannot be empty")
@@ -71,8 +74,15 @@ func (h *ChatHandler) HandleChatMessage(c echo.Context) error {
 	log.Printf("Processing chat message using model: %s", targetModelName)
 
 	ctx := c.Request().Context()
+	var finalMessage string
 
-	aiReply, err := h.geminiClient.GenerateContent(ctx, targetModelName, req.Message)
+	if !req.AssistedLearning {
+		finalMessage = req.Message
+	} else {
+		finalMessage = utils.AssistedLearningPrompt + req.Message
+	}
+
+	aiReply, err := h.geminiClient.GenerateContent(ctx, targetModelName, finalMessage)
 	if err != nil {
 		log.Printf("Error calling Gemini API with model %s: %v", targetModelName, err)
 		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Failed to get response from AI using model %s", targetModelName))

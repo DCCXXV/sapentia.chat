@@ -60,14 +60,6 @@
     }
 
     let sanitizedContentPromise = $derived(getSanitizedContent(message.content));
-
-    async function handleCopy() {
-        if (!navigator.clipboard) {
-            console.error("Clipboard API not supported in this browser.");
-        } else {
-            await navigator.clipboard.writeText(message.content);
-        }
-    }
 </script>
 
 <article
@@ -90,7 +82,7 @@
         {/if}
     </Tile>
     <div class="copy-button-wrapper" class:visible={isHovering}>
-        <CopyButton text={message.content} class="copy-button" onclick={handleCopy} />
+        <CopyButton text={message.content} class="copy-button" />
     </div>
 </article>
 
@@ -113,7 +105,7 @@
         margin-left: auto
     }
     .chat-message {
-        margin-bottom: 1rem;
+        margin-top: 1rem;
         max-width: 80%;
         hyphens: auto;
         hyphenate-limit-chars: 7;
@@ -129,12 +121,12 @@
     }
 
     .ai-message {
+        margin-top: 1rem;
         margin-right: auto;
         max-width: 80%;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        margin-bottom: 1rem;
     }
 
     :global(.user-message .bx--tile),
