@@ -28,7 +28,7 @@ type ChatHandler struct {
 var modelIDToNameMap = map[string]string{
 	"0": "gemini-2.0-flash-lite",
 	"1": "gemini-2.0-flash",
-	"2": "gemini-2.5-pro-latest",
+	"2": "gemini-2.5-pro-exp-03-25",
 }
 
 const defaultModelName = "gemini-2.0-flash"

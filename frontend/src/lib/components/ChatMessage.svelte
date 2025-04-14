@@ -9,6 +9,7 @@
     const md: MarkdownIt = new MarkdownIt({
         html: false,
         linkify: true,
+        breaks: false,
         typographer: true,
 
         highlight: (str: string, lang: string | undefined): string => {

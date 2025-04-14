@@ -10,6 +10,7 @@
     let assistedLearning: boolean = $state(false);
 
     const themeItems = [
+        { id: 'white', text: 'white' },
         { id: 'g10', text: 'g10' },
         { id: 'g80', text: 'g80' },
         { id: 'g90', text: 'g90' },
