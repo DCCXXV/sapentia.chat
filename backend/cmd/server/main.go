@@ -12,6 +12,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/ziflex/lecho/v3"
 
 	"github.com/DCCXXV/sapentia.chat/backend/internal/api"
 	"github.com/DCCXXV/sapentia.chat/backend/internal/config"
@@ -24,21 +25,11 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	ctx := context.Background()
-	geminiClient, err := gemini.NewClient(ctx, cfg.GeminiAPIKey)
-	if err != nil {
-		log.Fatalf("Failed to initialize Gemini client: %v", err)
-	}
-
-	defer func() {
-		if err := geminiClient.Close(); err != nil {
-			log.Printf("Error closing gemini client: %v", err)
-		}
-	}()
-
 	e := echo.New()
 
-	e.Use(middleware.Logger())
+	lechoLogger := lecho.New(os.Stdout)
+
+	e.Logger = lechoLogger
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: cfg.AllowOrigins,
@@ -46,7 +37,24 @@ func main() {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
-	chatHandler := api.NewChatHandler(geminiClient)
+	ctx := context.Background()
+	geminiClient, err := gemini.NewClient(ctx, cfg.GeminiAPIKey, lechoLogger)
+	if err != nil {
+		lechoLogger.Fatalf("Failed 2to initialize Gemini client: %v", err)
+	}
+
+	defer func() {
+		if err := geminiClient.Close(); err != nil {
+			lechoLogger.Printf("Error closing gemini client: %v", err)
+		}
+	}()
+
+	chatHandler, err := api.NewChatHandler(geminiClient)
+
+	if err != nil {
+		lechoLogger.Error("Failed to create chat handler")
+	}
+
 	apiGroup := e.Group("/api")
 	{
 		apiGroup.POST("/chat", chatHandler.HandleChatMessage)
@@ -62,7 +70,7 @@ func main() {
 func startServer(e *echo.Echo, port string) {
 	go func() {
 		serverAddr := fmt.Sprintf(":%s", port)
-		log.Printf("Starting server on %s", serverAddr)
+		e.Logger.Info("Starting server on %s", serverAddr)
 		if err := e.Start(serverAddr); err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal("shutting down the server unexpectedly: ", err)
 		}
@@ -72,7 +80,7 @@ func startServer(e *echo.Echo, port string) {
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
-	log.Println("Shutting down server...")
+	e.Logger.Info("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -81,5 +89,5 @@ func startServer(e *echo.Echo, port string) {
 		e.Logger.Fatal("Server forced to shutdown: ", err)
 	}
 
-	log.Println("Server exiting gracefully")
+	e.Logger.Info("Server exiting gracefully")
 }

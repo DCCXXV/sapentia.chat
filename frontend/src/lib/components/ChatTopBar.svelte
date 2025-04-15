@@ -3,18 +3,14 @@
     import type { CarbonTheme } from 'carbon-components-svelte/src/Theme/Theme.svelte';
 
     type $$Props = {
-        theme: CarbonTheme;
         model: string;
         assistedLearning: boolean;
-        themeItems: { id: string; text: string }[];
         modelItems: { id: string; text: string }[];
     };
 
     let {
-        theme = $bindable(),
         model = $bindable(),
         assistedLearning = $bindable(),
-        themeItems,
         modelItems
     } = $props();
 
@@ -22,6 +18,17 @@
         const target = event.target as HTMLInputElement;
         assistedLearning = target.checked;
     }
+
+    let theme: CarbonTheme = $state('g100');
+
+
+    const themeItems = [
+        { id: 'white', text: 'white' },
+        { id: 'g10', text: 'g10' },
+        { id: 'g80', text: 'g80' },
+        { id: 'g90', text: 'g90' },
+        { id: 'g100', text: 'g100' },
+    ];
 
 </script>
 
@@ -52,7 +59,7 @@
         on:change={onToggleChange}
     />
     <h3 class="title">
-        Sapentia<span style="color: grey;">.chat</span>
+        Sapentia<span style="color: var(--cds-text-secondary, #525252);">.chat</span>
     </h3>
 </div>
 

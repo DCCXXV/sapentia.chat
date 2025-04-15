@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -33,45 +32,44 @@ var modelIDToNameMap = map[string]string{
 
 const defaultModelName = "gemini-2.0-flash"
 
-func NewChatHandler(gc *gemini.Client) *ChatHandler {
+func NewChatHandler(gc *gemini.Client) (*ChatHandler, error) {
 	if gc == nil {
-		log.Fatalf("Gemini client cannot be nil in ChatHandler")
+		return nil, fmt.Errorf("gemini client cannot be nil in ChatHandler")
 	}
 	return &ChatHandler{
 		geminiClient: gc,
-	}
+	}, nil
 }
 
 func (h *ChatHandler) HandleChatMessage(c echo.Context) error {
 	req := new(ChatRequest)
 	if err := c.Bind(req); err != nil {
-		log.Printf("Error binding request: %v", err)
+		c.Logger().Errorf("Error binding request: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request format")
 	}
 
-	log.Println(req.Message)
-	log.Println(req.SelectedModelID)
-	log.Println(req.AssistedLearning)
+	c.Logger().Debugf("Received chat request: Message='%s', ModelID='%s', AssistedLearning=%t", req.Message, req.SelectedModelID, req.AssistedLearning)
 
 	if req.Message == "" {
+		c.Logger().Warn("Received request with empty message")
 		return echo.NewHTTPError(http.StatusBadRequest, "Message cannot be empty")
 	}
 
 	var targetModelName string
 	if req.SelectedModelID == "" {
-		log.Println("Warning: SelectedModelID is empty in request, using default model.")
+		c.Logger().Warn("Warning: SelectedModelID is empty in request, using default model.")
 		targetModelName = defaultModelName
 	} else {
 		modelName, found := modelIDToNameMap[req.SelectedModelID]
 		if !found {
-			log.Printf("Warning: Received unknown model ID '%s', using default model.", req.SelectedModelID)
+			c.Logger().Warn("Warning: Received unknown model ID '%s', using default model.", req.SelectedModelID)
 			targetModelName = defaultModelName
 		} else {
 			targetModelName = modelName
 		}
 	}
 
-	log.Printf("Processing chat message using model: %s", targetModelName)
+	c.Logger().Info("Processing chat message using model: %s", targetModelName)
 
 	ctx := c.Request().Context()
 	var finalMessage string
@@ -84,7 +82,7 @@ func (h *ChatHandler) HandleChatMessage(c echo.Context) error {
 
 	aiReply, err := h.geminiClient.GenerateContent(ctx, targetModelName, finalMessage)
 	if err != nil {
-		log.Printf("Error calling Gemini API with model %s: %v", targetModelName, err)
+		c.Logger().Errorf("Error calling Gemini API with model %s: %v", targetModelName, err)
 		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Failed to get response from AI using model %s", targetModelName))
 	}
 

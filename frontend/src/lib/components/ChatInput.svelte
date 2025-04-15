@@ -29,7 +29,7 @@
     <TextArea
         placeholder="Type your message..."
         bind:value={inputValue}
-        style="flex-grow: 1; margin-right: 1rem; resize: none;"
+        style="flex-grow: 1; margin-right: 0.5rem; resize: none;"
         onkeydown={handleKeyDown}
     />
     <Button 

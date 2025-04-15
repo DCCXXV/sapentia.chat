@@ -2,104 +2,130 @@ package gemini
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
+	"strings"
 
 	"github.com/google/generative-ai-go/genai"
+	"github.com/labstack/echo/v4"
 	"google.golang.org/api/option"
+)
+
+var (
+	ErrBlockedResponse = errors.New("gemini: response blocked by safety settings")
+	ErrEmptyResponse   = errors.New("gemini: received empty or non-text response")
 )
 
 type Client struct {
 	genaiClient *genai.Client
+	logger      echo.Logger
 }
 
-func NewClient(ctx context.Context, apiKey string) (*Client, error) {
+func NewClient(ctx context.Context, apiKey string, logger echo.Logger) (*Client, error) {
 	if apiKey == "" {
 		return nil, fmt.Errorf("API key cannot be empty")
+	}
+	if logger == nil {
+		return nil, fmt.Errorf("logger cannot be nil")
 	}
 
 	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
+		logger.Errorf("Error creating GenAI client: %v", err)
 		return nil, fmt.Errorf("error creating GenAI client: %w", err)
 	}
-	log.Println("Gemini client initialized successfully (ready to use any model).")
+	logger.Info("Gemini client initialized successfully (ready to use any model).")
 
 	return &Client{
 		genaiClient: client,
+		logger:      logger,
 	}, nil
 }
 
 func (c *Client) GenerateContent(ctx context.Context, modelName string, prompt string) (string, error) {
 	if modelName == "" {
-		log.Println("Error: GenerateContent called with empty modelName.")
+		c.logger.Error("Error: GenerateContent called with empty modelName.")
 		return "", fmt.Errorf("modelName cannot be empty when calling GenerateContent")
 	}
 
 	model := c.genaiClient.GenerativeModel(modelName)
 
-	log.Printf("Sending to Gemini (model: %s): %s", modelName, prompt)
+	c.logger.Infof("Sending to Gemini (model: %s): %s", modelName, prompt)
 
 	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
 	if err != nil {
-		log.Printf("Error generating content from Gemini (model: %s): %v", modelName, err)
+		c.logger.Errorf("Error generating content from Gemini (model: %s): %v", modelName, err)
 		return "", fmt.Errorf("failed to get response from AI (model: %s): %w", modelName, err)
 	}
 
-	aiReplyContent := extractTextFromResponse(resp)
-	if aiReplyContent == "" {
-		log.Printf("Gemini response (model: %s) was empty or had unexpected format: %+v", modelName, resp)
-		blockReason := "unknown or no content"
-		if resp != nil && resp.PromptFeedback != nil && resp.PromptFeedback.BlockReason != genai.BlockReasonUnspecified {
-			blockReason = fmt.Sprintf("PROMPT_BLOCK_%s", resp.PromptFeedback.BlockReason.String())
-		} else if resp != nil && len(resp.Candidates) > 0 && resp.Candidates[0].FinishReason == genai.FinishReasonSafety {
-			blockReason = fmt.Sprintf("FINISH_REASON_%s", resp.Candidates[0].FinishReason.String())
-		}
-		return "", fmt.Errorf("AI (model: %s) returned an empty or blocked response (reason: %s)", modelName, blockReason)
+	aiReplyContent, err := c.extractTextFromResponse(resp, modelName)
+	if err != nil {
+		return "", fmt.Errorf("failed to process response from AI (model: %s): %w", modelName, err)
 	}
 
-	log.Printf("Received from Gemini (model: %s): %s", modelName, aiReplyContent)
+	c.logger.Infof("Received from Gemini (model: %s): %s", modelName, aiReplyContent)
 	return aiReplyContent, nil
 }
 
 func (c *Client) Close() error {
-	log.Println("Closing Gemini client.")
+	c.logger.Info("Closing Gemini client.")
 	return c.genaiClient.Close()
 }
 
-func extractTextFromResponse(resp *genai.GenerateContentResponse) string {
-	if resp == nil || len(resp.Candidates) == 0 {
-		if resp != nil && resp.PromptFeedback != nil && resp.PromptFeedback.BlockReason != genai.BlockReasonUnspecified {
-			log.Printf("Prompt blocked due to safety settings: Reason %s", resp.PromptFeedback.BlockReason.String())
-		}
-		return ""
+func (c *Client) extractTextFromResponse(resp *genai.GenerateContentResponse, modelName string) (string, error) {
+	if resp == nil {
+		c.logger.Warnf("Gemini response object was nil (model: %s)", modelName)
+		return "", ErrEmptyResponse
+	}
+
+	if resp.PromptFeedback != nil && resp.PromptFeedback.BlockReason != genai.BlockReasonUnspecified {
+		reason := resp.PromptFeedback.BlockReason.String()
+		c.logger.Warnf("Prompt blocked by Gemini (model: %s). Reason: %s", modelName, reason)
+		return "", fmt.Errorf("%w: prompt block reason %s", ErrBlockedResponse, reason)
+	}
+
+	if len(resp.Candidates) == 0 {
+		c.logger.Warnf("Gemini response (model: %s) contained no candidates.", modelName)
+		return "", ErrEmptyResponse
 	}
 
 	candidate := resp.Candidates[0]
-	if candidate.FinishReason != genai.FinishReasonStop && candidate.FinishReason != genai.FinishReasonUnspecified {
-		log.Printf("Content generation stopped unexpectedly. FinishReason: %s", candidate.FinishReason.String())
-		if candidate.FinishReason == genai.FinishReasonSafety && len(candidate.SafetyRatings) > 0 {
-			log.Printf("Safety Ratings: %+v", candidate.SafetyRatings)
+	finishReason := candidate.FinishReason
+
+	if finishReason == genai.FinishReasonSafety {
+		reasonStr := finishReason.String()
+		c.logger.Warnf("Content generation stopped by safety settings (model: %s). FinishReason: %s", modelName, reasonStr)
+		if len(candidate.SafetyRatings) > 0 {
+			c.logger.Debugf("Safety Ratings (model: %s): %+v", modelName, candidate.SafetyRatings)
 		}
-		return ""
+		return "", fmt.Errorf("%w: finish reason %s", ErrBlockedResponse, reasonStr)
+	}
+
+	if finishReason != genai.FinishReasonStop && finishReason != genai.FinishReasonUnspecified {
+		reasonStr := finishReason.String()
+		c.logger.Warnf("Content generation stopped unexpectedly (model: %s). FinishReason: %s", modelName, reasonStr)
+		return "", fmt.Errorf("%w: unexpected finish reason %s", ErrEmptyResponse, reasonStr)
 	}
 
 	if candidate.Content == nil || len(candidate.Content.Parts) == 0 {
-		log.Println("Candidate content or parts are nil/empty.")
-		return ""
+		c.logger.Warnf("Candidate content or parts are nil/empty (model: %s, finishReason: %s).", modelName, finishReason)
+		return "", ErrEmptyResponse
 	}
 
-	var fullText string
+	var sb strings.Builder
 	for _, part := range candidate.Content.Parts {
 		if textPart, ok := part.(genai.Text); ok {
-			fullText += string(textPart)
+			sb.WriteString(string(textPart))
 		} else {
-			log.Printf("Encountered non-text part in response: %T", part)
+			c.logger.Warnf("Encountered non-text part in response (model: %s): %T", modelName, part)
 		}
 	}
 
+	fullText := sb.String()
 	if fullText == "" {
-		log.Println("Extracted text is empty after processing parts.")
+		c.logger.Warnf("Extracted text is empty after processing parts (model: %s).", modelName)
+		return "", ErrEmptyResponse
 	}
 
-	return fullText
+	return fullText, nil
 }
